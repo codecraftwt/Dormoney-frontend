@@ -476,9 +476,15 @@ export default function DashboardPage() {
                     color="inherit"
                     onClick={logout}
                     aria-label="Logout"
-                    sx={{ minWidth: 40, px: 1.25 }}
+                    startIcon={<LogoutIcon fontSize="small" />}
+                    sx={{
+                      minWidth: { xs: 40, sm: 110 },
+                      px: { xs: 1.25, sm: 1.75 },
+                    }}
                   >
-                    <LogoutIcon fontSize="small" />
+                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                      Logout
+                    </Box>
                   </Button>
                 </Tooltip>
               </Stack>
