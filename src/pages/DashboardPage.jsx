@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LogoutIcon from "@mui/icons-material/Logout";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
-import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import { toast } from "react-toastify";
 import {
   Alert,
@@ -14,20 +11,13 @@ import {
   Card,
   CardContent,
   Checkbox,
-  Chip,
   CircularProgress,
   Divider,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   IconButton,
   InputAdornment,
-  MenuItem,
   Paper,
   Stack,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -49,42 +39,19 @@ const initialFilters = {
   deadlineEnd: "",
 };
 
-const blankForm = {
-  name: "",
-  link: "",
-  awardAmount: "",
-  deadline: "",
-  category: CATEGORIES[0],
-  featured: false,
-  isActive: true,
-};
-
 export default function DashboardPage() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const [filters, setFilters] = useState(initialFilters);
   const [scholarships, setScholarships] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState("");
-  const [form, setForm] = useState(blankForm);
-  const [editingId, setEditingId] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    title: "",
-    message: "",
-    confirmText: "Confirm",
-    action: null,
-  });
 
   const fetchScholarships = async (nextFilters = filters) => {
     setLoading(true);
     setError("");
     try {
-      const params = {};
-      if (!isAdmin) {
-        params.activeOnly = true;
-      }
+      const params = { activeOnly: true };
       if (nextFilters.categories.length) {
         params.categories = nextFilters.categories.join(",");
       }
@@ -166,132 +133,6 @@ export default function DashboardPage() {
     setSearchText("");
     setFilters(initialFilters);
     fetchScholarships(initialFilters);
-  };
-
-  const onFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const openCreateModal = () => {
-    setEditingId(null);
-    setForm(blankForm);
-    setIsModalOpen(true);
-  };
-
-  const onEdit = (item) => {
-    setEditingId(item._id);
-    setForm({
-      name: item.name || "",
-      link: item.link || "",
-      awardAmount: item.awardAmount || "",
-      deadline: item.deadline ? item.deadline.slice(0, 10) : "",
-      category: item.category || CATEGORIES[0],
-      featured: Boolean(item.featured),
-      isActive: Boolean(item.isActive),
-    });
-    setIsModalOpen(true);
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      if (editingId) {
-        await api.put(`/api/scholarships/${editingId}`, form);
-        toast.success("Scholarship updated successfully");
-      } else {
-        await api.post("/api/scholarships", form);
-        toast.success("Scholarship created successfully");
-      }
-      setForm(blankForm);
-      setEditingId(null);
-      setIsModalOpen(false);
-      fetchScholarships();
-    } catch (err) {
-      const message = err.response?.data?.message || "Save failed";
-      setError(message);
-      toast.error(message);
-    }
-  };
-
-  const onToggle = async (id) => {
-    setError("");
-    try {
-      await api.patch(`/api/scholarships/${id}/toggle-active`);
-      toast.success("Scholarship status updated");
-      fetchScholarships();
-    } catch (err) {
-      const message = err.response?.data?.message || "Toggle failed";
-      setError(message);
-      toast.error(message);
-    }
-  };
-
-  const onStatusChange = async (item, nextStatus) => {
-    const wantsActive = nextStatus === "active";
-    const isCurrentlyActive = Boolean(item.isActive);
-    if (wantsActive === isCurrentlyActive) return;
-    setConfirmDialog({
-      open: true,
-      title: "Change scholarship status",
-      message: `Do you want to mark "${item.name}" as ${
-        wantsActive ? "Active" : "Inactive"
-      }?`,
-      confirmText: "Yes, update",
-      action: {
-        type: "status",
-        id: item._id,
-      },
-    });
-  };
-
-  const onDelete = (id, name = "this scholarship") => {
-    setConfirmDialog({
-      open: true,
-      title: "Delete scholarship",
-      message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
-      confirmText: "Yes, delete",
-      action: {
-        type: "delete",
-        id,
-      },
-    });
-  };
-
-  const runDelete = async (id) => {
-    setError("");
-    try {
-      await api.delete(`/api/scholarships/${id}`);
-      toast.success("Scholarship deleted successfully");
-      fetchScholarships();
-    } catch (err) {
-      const message = err.response?.data?.message || "Delete failed";
-      setError(message);
-      toast.error(message);
-    }
-  };
-
-  const handleConfirmDialogClose = () => {
-    setConfirmDialog((prev) => ({ ...prev, open: false, action: null }));
-  };
-
-  const handleConfirmAction = async () => {
-    const action = confirmDialog.action;
-    handleConfirmDialogClose();
-    if (!action) return;
-
-    if (action.type === "delete") {
-      await runDelete(action.id);
-      return;
-    }
-
-    if (action.type === "status") {
-      await onToggle(action.id);
-    }
   };
 
   return (
@@ -586,15 +427,6 @@ export default function DashboardPage() {
                 bgcolor: "#fff",
               }}
             >
-              {isAdmin ? (
-                <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-                  <Stack direction="row" justifyContent="flex-end">
-                    <Button variant="contained" onClick={openCreateModal}>
-                      Add Scholarship
-                    </Button>
-                  </Stack>
-                </Box>
-              ) : null}
               <TableContainer>
                 <Table size="small">
                   <TableHead>
@@ -603,8 +435,6 @@ export default function DashboardPage() {
                       <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Deadline</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Award</TableCell>
-                      {isAdmin ? <TableCell sx={{ fontWeight: 700 }}>Featured</TableCell> : null}
-                      {isAdmin ? <TableCell sx={{ fontWeight: 700 }}>Status</TableCell> : null}
                       <TableCell align="center" sx={{ fontWeight: 700 }}>
                         Actions
                       </TableCell>
@@ -621,28 +451,9 @@ export default function DashboardPage() {
                             : "-"}
                         </TableCell>
                         <TableCell>{item.awardAmount || "-"}</TableCell>
-                        {isAdmin ? (
-                          <TableCell>
-                            {item.featured ? <Chip size="small" label="Yes" /> : "No"}
-                          </TableCell>
-                        ) : null}
-                        {isAdmin ? (
-                          <TableCell>
-                            <TextField
-                              select
-                              size="small"
-                              value={item.isActive ? "active" : "inactive"}
-                              onChange={(e) => onStatusChange(item, e.target.value)}
-                              sx={{ minWidth: 130 }}
-                            >
-                              <MenuItem value="active">Active</MenuItem>
-                              <MenuItem value="inactive">Inactive</MenuItem>
-                            </TextField>
-                          </TableCell>
-                        ) : null}
                         <TableCell align="center">
                           <Stack direction="row" spacing={1} justifyContent="center">
-                            {item.link && !isAdmin ? (
+                            {item.link ? (
                               <Button
                                 size="small"
                                 variant="contained"
@@ -654,43 +465,6 @@ export default function DashboardPage() {
                               >
                                 Apply Here
                               </Button>
-                            ) : null}
-                            {item.link && isAdmin ? (
-                              <Tooltip title="View">
-                                <IconButton
-                                  size="small"
-                                  color="tertiary"
-                                  component="a"
-                                  href={item.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <VisibilityRoundedIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            ) : null}
-                            {isAdmin ? (
-                              <Tooltip title="Edit">
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={() => onEdit(item)}
-                                >
-                                  <EditRoundedIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            ) : null}
-                            {isAdmin ? (
-                              <Tooltip title="Delete">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => onDelete(item._id, item.name)}
-                                 
-                                >
-                                  <DeleteRoundedIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
                             ) : null}
                           </Stack>
                         </TableCell>
@@ -704,109 +478,6 @@ export default function DashboardPage() {
 
         </Box>
       </Box>
-
-      <Dialog
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{editingId ? "Edit Scholarship" : "Add Scholarship"}</DialogTitle>
-        <Box component="form" onSubmit={onSubmit}>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              <TextField
-                name="name"
-                value={form.name}
-                onChange={onFormChange}
-                label="Name"
-                required
-              />
-              <TextField
-                name="link"
-                value={form.link}
-                onChange={onFormChange}
-                label="External URL"
-                required
-              />
-              <TextField
-                name="awardAmount"
-                value={form.awardAmount}
-                onChange={onFormChange}
-                label="Award Amount"
-                helperText='e.g. "$5,000" or "Amount varies"'
-                required
-              />
-              <TextField
-                name="deadline"
-                type="date"
-                value={form.deadline}
-                onChange={onFormChange}
-                required
-              />
-              <TextField
-                select
-                name="category"
-                value={form.category}
-                onChange={onFormChange}
-                label="Category"
-              >
-                {CATEGORIES.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.featured}
-                    onChange={onFormChange}
-                    name="featured"
-                  />
-                }
-                label="Featured"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.isActive}
-                    onChange={onFormChange}
-                    name="isActive"
-                  />
-                }
-                label="Active"
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              {editingId ? "Update Scholarship" : "Create Scholarship"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
-
-      <Dialog
-        open={confirmDialog.open}
-        onClose={handleConfirmDialogClose}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>{confirmDialog.title}</DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">{confirmDialog.message}</Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button variant="outlined" onClick={handleConfirmDialogClose}>
-            Cancel
-          </Button>
-          <Button variant="contained" color="error" onClick={handleConfirmAction}>
-            {confirmDialog.confirmText}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

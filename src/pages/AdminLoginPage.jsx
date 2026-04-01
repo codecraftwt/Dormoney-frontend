@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {
   Alert,
   Box,
@@ -21,7 +21,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import api from "../lib/api";
 import useAuth from "../hooks/useAuth";
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -44,9 +44,9 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const res = await api.post("/api/auth/login", form);
+      const res = await api.post("/api/auth/admin/login", form);
       login(res.data);
-      navigate("/dashboard");
+      navigate("/admin");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
@@ -75,7 +75,6 @@ export default function LoginPage() {
           border: "1px solid #e2e8f0",
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             p: 4,
@@ -96,23 +95,18 @@ export default function LoginPage() {
               margin: "0 auto 16px",
             }}
           >
-            <LockOutlinedIcon sx={{ fontSize: 32, color: "#334155" }} />
+            <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 32, color: "#334155" }} />
           </Box>
 
           <Typography variant="h4" fontWeight={700} color="#0f172a" gutterBottom>
-            Welcome back
+            Admin sign in
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Sign in to continue to your dashboard
+            Sign in to manage scholarships and platform settings
           </Typography>
         </Box>
 
-        {/* Form */}
-        <Box
-          component="form"
-          onSubmit={onSubmit}
-          sx={{ p: 4 }}
-        >
+        <Box component="form" onSubmit={onSubmit} sx={{ p: 4 }}>
           <Stack spacing={3}>
             <TextField
               name="email"
@@ -228,22 +222,10 @@ export default function LoginPage() {
               {submitting ? "Signing in..." : "Sign in"}
             </Button>
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              textAlign="center"
-              sx={{ mt: 1 }}
-            >
-              Don't have an account?{" "}
-              <Link to="/signup" style={{ color: "inherit", fontWeight: 600 }}>
-                Create one now
-              </Link>
-            </Typography>
-
             <Typography variant="body2" color="text.secondary" textAlign="center">
-              Administrator?{" "}
-              <Link to="/admin/login" style={{ color: "inherit", fontWeight: 600 }}>
-                Admin sign in
+              Student or member?{" "}
+              <Link to="/login" style={{ color: "inherit", fontWeight: 600 }}>
+                User sign in
               </Link>
             </Typography>
           </Stack>

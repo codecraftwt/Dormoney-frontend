@@ -1,7 +1,12 @@
 import { Navigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
-export default function ProtectedRoute({ children, adminOnly = false }) {
+export default function ProtectedRoute({
+  children,
+  adminOnly = false,
+  blockAdmin = false,
+  loginPath = "/login",
+}) {
   const { isAuthenticated, isAdmin, loading } = useAuth();
 
   if (loading) {
@@ -9,11 +14,15 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={loginPath} replace />;
   }
 
   if (adminOnly && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (blockAdmin && isAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   return children;
