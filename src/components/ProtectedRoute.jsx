@@ -22,7 +22,7 @@ export default function ProtectedRoute({
   }
 
   if (blockAdmin && isAdmin) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return children;

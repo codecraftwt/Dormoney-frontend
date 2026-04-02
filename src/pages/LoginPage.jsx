@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
-    navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
+    navigate(isAdmin ? "/admin/dashboard" : "/dashboard", { replace: true });
   }, [authLoading, isAuthenticated, isAdmin, navigate]);
 
   const onSubmit = async (e) => {

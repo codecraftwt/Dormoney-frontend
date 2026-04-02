@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
     try {
       const res = await api.post("/api/auth/admin/login", form);
       login(res.data);
-      navigate("/admin");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
