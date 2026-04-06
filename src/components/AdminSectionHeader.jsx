@@ -1,4 +1,5 @@
 import { Box, Button, Stack, Typography } from "@mui/material";
+import { adminToolbarButtonSx } from "../admin/adminStyles";
 import useAuth from "../hooks/useAuth";
 
 export default function AdminSectionHeader({ title, subtitle }) {
@@ -22,7 +23,15 @@ export default function AdminSectionHeader({ title, subtitle }) {
           </Typography>
         ) : null}
       </Box>
-      <Button variant="contained" onClick={logout} sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}>
+      <Button
+        variant="contained"
+        onClick={logout}
+        sx={{
+          ...adminToolbarButtonSx,
+          alignSelf: { xs: "stretch", sm: "flex-start" },
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}
+      >
         Logout
       </Button>
     </Stack>

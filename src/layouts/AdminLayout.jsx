@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography } from "@mui/material";
+import api from "../lib/api";
 import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Dashboard as DashboardIcon,
@@ -20,6 +22,22 @@ const navItems = [
 ];
 
 export default function AdminLayout() {
+  const [siteName, setSiteName] = useState("Dormoney");
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/api/admin/settings")
+      .then((res) => {
+        const name = res.data?.settings?.siteName;
+        if (!cancelled && name) setSiteName(String(name));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f3f6fb" }}>
       <Drawer
@@ -39,7 +57,7 @@ export default function AdminLayout() {
         <Toolbar sx={{ px: 2, py: 2, alignItems: "center" }}>
           <AdminPanelSettingsIcon sx={{ color: "primary.main", mr: 1, fontSize: 28 }} />
           <Typography variant="h6" fontWeight={800} color="primary">
-            Dormoney
+            {siteName}
           </Typography>
         </Toolbar>
         <List sx={{ px: 1.5, pt: 0 }}>
@@ -81,9 +99,14 @@ export default function AdminLayout() {
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
+          flex: 1,
           minWidth: 0,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignSelf: "stretch",
           p: { xs: 2, md: 3 },
+          boxSizing: "border-box",
         }}
       >
         <Outlet />

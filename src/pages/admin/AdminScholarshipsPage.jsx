@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
+  Divider,
+  FormControl,
   FormControlLabel,
+  FormGroup,
+  FormLabel,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -32,8 +39,21 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import PowerSettingsNewRoundedIcon from "@mui/icons-material/PowerSettingsNewRounded";
 import api from "../../lib/api";
+import { adminAlertSx, adminOuterPaperSx, thSx } from "../../admin/adminStyles";
 import { CATEGORIES } from "../../constants";
 import AdminSectionHeader from "../../components/AdminSectionHeader";
+
+const GRADE_LEVEL_OPTIONS = [
+  { value: "high_school", label: "High school" },
+  { value: "undergraduate", label: "Undergraduate" },
+  { value: "graduate", label: "Graduate" },
+];
+
+const AWARD_FREQUENCY_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "one_time", label: "One-time" },
+  { value: "renewable", label: "Renewable" },
+];
 
 const blankForm = {
   name: "",
@@ -43,6 +63,18 @@ const blankForm = {
   category: CATEGORIES[0],
   featured: false,
   isActive: true,
+  description: "",
+  eligibleMajors: "",
+  minGpaRequired: "",
+  eligibleStatesAll: true,
+  eligibleStatesSpecific: "",
+  specialEligibility: "",
+  gradeLevels: [],
+  essayRequired: false,
+  citizenshipRequirement: "",
+  organizationName: "",
+  awardFrequency: "",
+  numberOfAwards: "",
 };
 
 const SORT_OPTIONS = [
@@ -51,19 +83,6 @@ const SORT_OPTIONS = [
   { value: "category", label: "Category" },
   { value: "award", label: "Award amount" },
 ];
-
-const thSx = {
-  fontWeight: 600,
-  fontSize: "0.72rem",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "text.secondary",
-  py: 1.5,
-  borderBottom: "1px solid",
-  borderColor: "divider",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-};
 
 function sortList(items, sortBy) {
   const copy = [...items];
@@ -76,6 +95,61 @@ function sortList(items, sortBy) {
   return copy;
 }
 
+function buildPayload(form) {
+  const specific = String(form.eligibleStatesSpecific || "").trim();
+  const eligibleStates = form.eligibleStatesAll ? "ALL" : specific || "ALL";
+  const minGpa =
+    form.minGpaRequired === "" || form.minGpaRequired === null || form.minGpaRequired === undefined
+      ? null
+      : Number(form.minGpaRequired);
+  return {
+    name: form.name.trim(),
+    link: form.link.trim(),
+    awardAmount: form.awardAmount.trim(),
+    deadline: form.deadline,
+    category: form.category,
+    featured: form.featured,
+    isActive: form.isActive,
+    description: form.description.trim(),
+    eligibleMajors: form.eligibleMajors.trim(),
+    minGpaRequired: minGpa,
+    eligibleStates,
+    specialEligibility: form.specialEligibility.trim(),
+    gradeLevels: form.gradeLevels,
+    essayRequired: form.essayRequired,
+    citizenshipRequirement: form.citizenshipRequirement.trim(),
+    organizationName: form.organizationName.trim(),
+    awardFrequency: form.awardFrequency,
+    numberOfAwards: form.numberOfAwards.trim(),
+  };
+}
+
+function itemToForm(item) {
+  const states = String(item.eligibleStates || "ALL").trim();
+  const allStates = /^ALL$/i.test(states);
+  return {
+    name: item.name ?? "",
+    link: item.link ?? "",
+    awardAmount: item.awardAmount ?? "",
+    deadline: item.deadline ? item.deadline.slice(0, 10) : "",
+    category: item.category ?? CATEGORIES[0],
+    featured: Boolean(item.featured),
+    isActive: Boolean(item.isActive),
+    description: item.description ?? "",
+    eligibleMajors: item.eligibleMajors ?? "",
+    minGpaRequired: item.minGpaRequired != null && item.minGpaRequired !== "" ? String(item.minGpaRequired) : "",
+    eligibleStatesAll: allStates,
+    eligibleStatesSpecific: allStates ? "" : states,
+    specialEligibility: item.specialEligibility ?? "",
+    gradeLevels: Array.isArray(item.gradeLevels) ? [...item.gradeLevels] : [],
+    essayRequired: Boolean(item.essayRequired),
+    citizenshipRequirement: item.citizenshipRequirement ?? "",
+    organizationName: item.organizationName ?? "",
+    awardFrequency: item.awardFrequency ?? "",
+    numberOfAwards: item.numberOfAwards ?? "",
+  };
+}
+
 export default function AdminScholarshipsPage() {
   const [list, setList] = useState([]);
   const [form, setForm] = useState(blankForm);
@@ -85,6 +159,9 @@ export default function AdminScholarshipsPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  /** { id, name } when user is confirming deletion */
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -93,13 +170,17 @@ export default function AdminScholarshipsPage() {
       const res = await api.get("/api/scholarships");
       setList(res.data.scholarships);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load scholarships");
+      const msg = err.response?.data?.message || "Failed to load scholarships";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -109,7 +190,13 @@ export default function AdminScholarshipsPage() {
         (item) =>
           item.name?.toLowerCase().includes(q) ||
           item.category?.toLowerCase().includes(q) ||
-          String(item.awardAmount).toLowerCase().includes(q)
+          String(item.awardAmount).toLowerCase().includes(q) ||
+          String(item.description || "")
+            .toLowerCase()
+            .includes(q) ||
+          String(item.eligibleMajors || "")
+            .toLowerCase()
+            .includes(q)
       );
     }
     return sortList(rows, sortBy);
@@ -120,52 +207,70 @@ export default function AdminScholarshipsPage() {
     setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
+  const toggleGradeLevel = (value) => {
+    setForm((prev) => {
+      const has = prev.gradeLevels.includes(value);
+      return {
+        ...prev,
+        gradeLevels: has ? prev.gradeLevels.filter((g) => g !== value) : [...prev.gradeLevels, value],
+      };
+    });
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    const payload = buildPayload(form);
     try {
       if (editingId) {
-        await api.put(`/api/scholarships/${editingId}`, form);
+        await api.put(`/api/scholarships/${editingId}`, payload);
+        toast.success("Scholarship updated.");
       } else {
-        await api.post("/api/scholarships", form);
+        await api.post("/api/scholarships", payload);
+        toast.success("Scholarship created.");
       }
       setForm(blankForm);
       setEditingId(null);
       setIsModalOpen(false);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || "Save failed");
+      const msg = err.response?.data?.message || "Save failed";
+      const errs = err.response?.data?.errors;
+      const full = errs?.length ? `${msg} (${errs.join("; ")})` : msg;
+      setError(full);
+      toast.error(full);
     }
   };
 
   const onEdit = (item) => {
     setEditingId(item._id);
+    setError("");
     setIsModalOpen(true);
-    setForm({
-      name: item.name,
-      link: item.link,
-      awardAmount: item.awardAmount,
-      deadline: item.deadline ? item.deadline.slice(0, 10) : "",
-      category: item.category,
-      featured: Boolean(item.featured),
-      isActive: Boolean(item.isActive),
-    });
+    setForm(itemToForm(item));
   };
 
   const openCreateModal = () => {
     setEditingId(null);
+    setError("");
     setForm(blankForm);
     setIsModalOpen(true);
   };
 
-  const onDelete = async (id) => {
-    if (!window.confirm("Delete this scholarship?")) return;
+  const confirmDeleteScholarship = async () => {
+    if (!deleteTarget?.id) return;
     setError("");
+    setDeleteSubmitting(true);
     try {
-      await api.delete(`/api/scholarships/${id}`);
+      await api.delete(`/api/scholarships/${deleteTarget.id}`);
+      toast.success("Scholarship deleted.");
+      setDeleteTarget(null);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || "Delete failed");
+      const msg = err.response?.data?.message || "Delete failed";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -173,29 +278,28 @@ export default function AdminScholarshipsPage() {
     setError("");
     try {
       await api.patch(`/api/scholarships/${id}/toggle-active`);
+      toast.success("Scholarship status updated.");
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || "Toggle failed");
+      const msg = err.response?.data?.message || "Toggle failed";
+      setError(msg);
+      toast.error(msg);
     }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setError("");
   };
 
   return (
     <Box>
       <AdminSectionHeader
         title="Scholarships"
-        subtitle="Manage and oversee all scholarship records."
+        subtitle="Only name, amount, deadline, apply URL, and description are required. Other fields improve AI matching when filled in."
       />
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 3,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        {/* Toolbar */}
+      <Paper elevation={0} sx={adminOuterPaperSx}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
@@ -234,7 +338,9 @@ export default function AdminScholarshipsPage() {
               }}
             >
               {SORT_OPTIONS.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
               ))}
             </TextField>
           </Stack>
@@ -255,9 +361,7 @@ export default function AdminScholarshipsPage() {
           </Button>
         </Stack>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
-        )}
+        {error && !isModalOpen ? <Alert severity="error" sx={adminAlertSx}>{error}</Alert> : null}
 
         {loading ? (
           <Stack alignItems="center" sx={{ py: 6 }}>
@@ -317,14 +421,12 @@ export default function AdminScholarshipsPage() {
                       transition: "background 0.15s",
                     }}
                   >
-                    {/* Name */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography fontWeight={600} fontSize="0.875rem" noWrap>
                         {item.name}
                       </Typography>
                     </TableCell>
 
-                    {/* Category */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Chip
                         label={item.category}
@@ -341,23 +443,22 @@ export default function AdminScholarshipsPage() {
                       />
                     </TableCell>
 
-                    {/* Deadline */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography fontSize="0.8rem" color="text.secondary" noWrap>
                         {new Date(item.deadline).toLocaleDateString("en-US", {
-                          month: "short", day: "numeric", year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
                         })}
                       </Typography>
                     </TableCell>
 
-                    {/* Award */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography fontSize="0.85rem" fontWeight={500} noWrap>
                         {item.awardAmount}
                       </Typography>
                     </TableCell>
 
-                    {/* Featured */}
                     <TableCell sx={{ py: 1.5 }}>
                       {item.featured ? (
                         <Chip
@@ -375,11 +476,12 @@ export default function AdminScholarshipsPage() {
                           }}
                         />
                       ) : (
-                        <Typography fontSize="0.8rem" color="text.disabled">—</Typography>
+                        <Typography fontSize="0.8rem" color="text.disabled">
+                          —
+                        </Typography>
                       )}
                     </TableCell>
 
-                    {/* Status */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Chip
                         size="small"
@@ -395,7 +497,6 @@ export default function AdminScholarshipsPage() {
                       />
                     </TableCell>
 
-                    {/* Actions — icon-only buttons keep the column narrow */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                         <Tooltip title="Edit" placement="top" arrow>
@@ -403,7 +504,8 @@ export default function AdminScholarshipsPage() {
                             size="small"
                             onClick={() => onEdit(item)}
                             sx={{
-                              width: 30, height: 30,
+                              width: 30,
+                              height: 30,
                               borderRadius: 1.5,
                               border: "1px solid",
                               borderColor: "grey.300",
@@ -420,7 +522,8 @@ export default function AdminScholarshipsPage() {
                             size="small"
                             onClick={() => onToggle(item._id)}
                             sx={{
-                              width: 30, height: 30,
+                              width: 30,
+                              height: 30,
                               borderRadius: 1.5,
                               border: "1px solid",
                               borderColor: item.isActive ? "#fde68a" : "#bbf7d0",
@@ -439,9 +542,10 @@ export default function AdminScholarshipsPage() {
                         <Tooltip title="Delete" placement="top" arrow>
                           <IconButton
                             size="small"
-                            onClick={() => onDelete(item._id)}
+                            onClick={() => setDeleteTarget({ id: item._id, name: item.name || "this scholarship" })}
                             sx={{
-                              width: 30, height: 30,
+                              width: 30,
+                              height: 30,
                               borderRadius: 1.5,
                               border: "1px solid",
                               borderColor: "#fecaca",
@@ -462,7 +566,6 @@ export default function AdminScholarshipsPage() {
           </TableContainer>
         )}
 
-        {/* Row count */}
         {!loading && filteredSorted.length > 0 && (
           <Typography variant="caption" color="text.disabled" sx={{ mt: 1.5, display: "block" }}>
             Showing {filteredSorted.length} of {list.length} scholarships
@@ -470,52 +573,306 @@ export default function AdminScholarshipsPage() {
         )}
       </Paper>
 
-      {/* Modal */}
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onClose={() => {
+          if (!deleteSubmitting) setDeleteTarget(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: 3 } }}
+        aria-labelledby="delete-scholarship-dialog-title"
+      >
+        <DialogTitle id="delete-scholarship-dialog-title" sx={{ fontWeight: 700, pb: 0.5 }}>
+          Delete scholarship?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText sx={{ color: "text.secondary", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+            This will permanently remove{" "}
+            <Box component="strong" sx={{ color: "text.primary", fontWeight: 700 }}>
+              {deleteTarget?.name}
+            </Box>{" "}
+            from the database. This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            disabled={deleteSubmitting}
+            sx={{ textTransform: "none", borderRadius: 2 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDeleteScholarship}
+            color="error"
+            variant="contained"
+            disabled={deleteSubmitting}
+            sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 2.5 }}
+          >
+            {deleteSubmitting ? <CircularProgress size={22} color="inherit" /> : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeModal}
         fullWidth
-        maxWidth="sm"
+        maxWidth="md"
+        scroll="paper"
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
           {editingId ? "Edit Scholarship" : "Add Scholarship"}
         </DialogTitle>
         <Box component="form" onSubmit={onSubmit}>
-          <DialogContent sx={{ pt: 1 }}>
+          <DialogContent
+            dividers
+            sx={{
+              pt: 1,
+              maxHeight: { xs: "70vh", sm: "calc(100vh - 220px)" },
+            }}
+          >
             <Stack spacing={2.5}>
+              <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ letterSpacing: "0.08em" }}>
+                Required
+              </Typography>
               <TextField
-                name="name" value={form.name} onChange={onChange}
-                label="Name" required fullWidth size="small"
+                name="name"
+                value={form.name}
+                onChange={onChange}
+                label="Scholarship name"
+                required
+                fullWidth
+                size="small"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
-                name="link" value={form.link} onChange={onChange}
-                label="External URL" required fullWidth size="small"
+                name="link"
+                value={form.link}
+                onChange={onChange}
+                label="Apply URL"
+                required
+                fullWidth
+                size="small"
+                helperText="Direct link to the application"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
-                name="awardAmount" value={form.awardAmount} onChange={onChange}
-                label="Award Amount" helperText='e.g. "$5,000" or "Amount varies"'
-                required fullWidth size="small"
+                name="awardAmount"
+                value={form.awardAmount}
+                onChange={onChange}
+                label="Award amount"
+                helperText='Dollar value, e.g. "$5,000" or "Amount varies"'
+                required
+                fullWidth
+                size="small"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
-                name="deadline" type="date" value={form.deadline} onChange={onChange}
-                label="Deadline" required fullWidth size="small"
+                name="deadline"
+                type="date"
+                value={form.deadline}
+                onChange={onChange}
+                label="Deadline"
+                required
+                fullWidth
+                size="small"
                 InputLabelProps={{ shrink: true }}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               />
               <TextField
-                select name="category" value={form.category} onChange={onChange}
-                label="Category" fullWidth size="small"
+                name="description"
+                value={form.description}
+                onChange={onChange}
+                label="Brief description"
+                required
+                fullWidth
+                multiline
+                minRows={3}
+                size="small"
+                helperText="1–2 sentences for listings and search"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <Divider sx={{ my: 0.5 }} />
+              <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ letterSpacing: "0.08em" }}>
+                Optional — AI matching
+              </Typography>
+
+              <TextField
+                name="eligibleMajors"
+                value={form.eligibleMajors}
+                onChange={onChange}
+                label="Eligible majors"
+                fullWidth
+                size="small"
+                helperText="Comma-separated (optional). E.g. Computer Science, Engineering."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+              <TextField
+                name="minGpaRequired"
+                value={form.minGpaRequired}
+                onChange={onChange}
+                label="Minimum GPA required"
+                type="number"
+                fullWidth
+                size="small"
+                inputProps={{ min: 0, max: 5, step: 0.01 }}
+                helperText="Optional. Scale 0–5. Leave blank if not specified."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
+                <FormLabel component="legend" sx={{ fontSize: "0.75rem", fontWeight: 600, mb: 0.5 }}>
+                  State eligibility (optional)
+                </FormLabel>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={form.eligibleStatesAll}
+                      onChange={(e) => setForm((prev) => ({ ...prev, eligibleStatesAll: e.target.checked }))}
+                      name="eligibleStatesAll"
+                      size="small"
+                    />
+                  }
+                  label={<Typography fontSize="0.875rem">All US states</Typography>}
+                />
+                {!form.eligibleStatesAll ? (
+                  <TextField
+                    name="eligibleStatesSpecific"
+                    value={form.eligibleStatesSpecific}
+                    onChange={onChange}
+                    label="Eligible states"
+                    fullWidth
+                    size="small"
+                    placeholder="e.g. CA, TX, NY"
+                    helperText="Comma-separated 2-letter codes. Leave blank to treat as all states."
+                    sx={{ mt: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                  />
+                ) : null}
+              </FormControl>
+
+              <TextField
+                name="specialEligibility"
+                value={form.specialEligibility}
+                onChange={onChange}
+                label="Special eligibility"
+                fullWidth
+                multiline
+                minRows={2}
+                size="small"
+                helperText="Optional. E.g. first-generation, low-income."
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <FormControl component="fieldset" variant="standard" sx={{ width: "100%" }}>
+                <FormLabel component="legend" sx={{ fontSize: "0.75rem", fontWeight: 600, mb: 0.5 }}>
+                  Grade level (optional)
+                </FormLabel>
+                <FormGroup row sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                  {GRADE_LEVEL_OPTIONS.map((opt) => (
+                    <FormControlLabel
+                      key={opt.value}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={form.gradeLevels.includes(opt.value)}
+                          onChange={() => toggleGradeLevel(opt.value)}
+                        />
+                      }
+                      label={<Typography fontSize="0.875rem">{opt.label}</Typography>}
+                    />
+                  ))}
+                </FormGroup>
+              </FormControl>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.essayRequired}
+                    onChange={onChange}
+                    name="essayRequired"
+                    size="small"
+                  />
+                }
+                label={<Typography fontSize="0.875rem">Essay required</Typography>}
+              />
+
+              <TextField
+                name="citizenshipRequirement"
+                value={form.citizenshipRequirement}
+                onChange={onChange}
+                label="Citizenship requirement"
+                fullWidth
+                size="small"
+                helperText='Optional. E.g. "US citizen", "Any".'
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <Divider sx={{ my: 0.5 }} />
+              <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ letterSpacing: "0.08em" }}>
+                Optional — details
+              </Typography>
+              <TextField
+                select
+                name="category"
+                value={form.category}
+                onChange={onChange}
+                label="Category"
+                fullWidth
+                size="small"
+                helperText="Defaults to General on save if unset."
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
               >
                 {CATEGORIES.map((category) => (
-                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
                 ))}
               </TextField>
-              <Stack direction="row" spacing={3}>
+              <TextField
+                name="organizationName"
+                value={form.organizationName}
+                onChange={onChange}
+                label="Organization offering scholarship"
+                fullWidth
+                size="small"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+              <TextField
+                select
+                name="awardFrequency"
+                value={form.awardFrequency}
+                onChange={onChange}
+                label="Award frequency"
+                fullWidth
+                size="small"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              >
+                {AWARD_FREQUENCY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.label} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                name="numberOfAwards"
+                value={form.numberOfAwards}
+                onChange={onChange}
+                label="Number of awards"
+                fullWidth
+                size="small"
+                helperText='e.g. "10" or "Varies"'
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+              />
+
+              <Divider sx={{ my: 0.5 }} />
+              <Typography variant="overline" color="text.secondary" fontWeight={700} sx={{ letterSpacing: "0.08em" }}>
+                Admin
+              </Typography>
+              <Stack direction="row" spacing={3} flexWrap="wrap">
                 <FormControlLabel
                   control={<Switch checked={form.featured} onChange={onChange} name="featured" size="small" />}
                   label={<Typography fontSize="0.875rem">Featured</Typography>}
@@ -525,11 +882,16 @@ export default function AdminScholarshipsPage() {
                   label={<Typography fontSize="0.875rem">Active</Typography>}
                 />
               </Stack>
-              {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
+
+              {error ? (
+                <Alert severity="error" sx={{ borderRadius: 2 }}>
+                  {error}
+                </Alert>
+              ) : null}
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 1, gap: 1 }}>
-            <Button onClick={() => setIsModalOpen(false)} sx={{ textTransform: "none", borderRadius: 2 }}>
+            <Button onClick={closeModal} sx={{ textTransform: "none", borderRadius: 2 }}>
               Cancel
             </Button>
             <Button type="submit" variant="contained" sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 3 }}>
