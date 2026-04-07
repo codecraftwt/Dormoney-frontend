@@ -5,7 +5,6 @@ import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   FormControlLabel,
   Paper,
@@ -20,6 +19,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import api from "../lib/api";
 import useAuth from "../hooks/useAuth";
+import AppButton from "../components/AppButton";
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -198,7 +198,7 @@ export default function AdminLoginPage() {
               </Alert>
             )}
 
-            <Button
+            <AppButton
               type="submit"
               variant="contained"
               size="large"
@@ -220,7 +220,7 @@ export default function AdminLoginPage() {
               }}
             >
               {submitting ? "Signing in..." : "Sign in"}
-            </Button>
+            </AppButton>
 
             <Typography variant="body2" color="text.secondary" textAlign="center">
               Student or member?{" "}

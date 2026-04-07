@@ -3,7 +3,6 @@ import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Grid,
   Paper,
@@ -21,6 +20,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import api from "../../lib/api";
 import { adminAlertSx } from "../../admin/adminStyles";
 import useAuth from "../../hooks/useAuth";
+import AppButton from "../../components/AppButton";
 
 const PAGE_BG = "#f3f6fb";
 const ICON_BOX_BG = "#e8f4fc";
@@ -97,7 +97,7 @@ function QuickActionsGrid() {
       <Grid container spacing={2.5} sx={{ width: "100%", mx: 0 }}>
         {QUICK_ACTIONS.map((a) => (
           <Grid item xs={12} sm={6} lg={3} key={a.label + a.to}>
-            <Button
+            <AppButton
               fullWidth
               component={RouterLink}
               to={a.to}
@@ -127,7 +127,7 @@ function QuickActionsGrid() {
                   </Typography>
                 </Box>
               </Stack>
-            </Button>
+            </AppButton>
           </Grid>
         ))}
       </Grid>
@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
             {todayLabel}
           </Typography>
         </Box>
-        <Button
+        <AppButton
           variant="contained"
           startIcon={<LogoutIcon />}
           onClick={logout}
@@ -219,7 +219,7 @@ export default function AdminDashboardPage() {
           }}
         >
           Logout
-        </Button>
+        </AppButton>
       </Stack>
 
       {error ? (

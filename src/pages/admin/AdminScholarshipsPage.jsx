@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   Chip,
   CircularProgress,
@@ -42,6 +41,7 @@ import api from "../../lib/api";
 import { adminAlertSx, adminOuterPaperSx, thSx } from "../../admin/adminStyles";
 import { CATEGORIES } from "../../constants";
 import AdminSectionHeader from "../../components/AdminSectionHeader";
+import AppButton from "../../components/AppButton";
 
 const GRADE_LEVEL_OPTIONS = [
   { value: "high_school", label: "High school" },
@@ -345,7 +345,7 @@ export default function AdminScholarshipsPage() {
             </TextField>
           </Stack>
 
-          <Button
+          <AppButton
             variant="contained"
             onClick={openCreateModal}
             sx={{
@@ -358,7 +358,7 @@ export default function AdminScholarshipsPage() {
             }}
           >
             + Add Scholarship
-          </Button>
+          </AppButton>
         </Stack>
 
         {error && !isModalOpen ? <Alert severity="error" sx={adminAlertSx}>{error}</Alert> : null}
@@ -596,14 +596,14 @@ export default function AdminScholarshipsPage() {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, pt: 0, gap: 1 }}>
-          <Button
+          <AppButton
             onClick={() => setDeleteTarget(null)}
             disabled={deleteSubmitting}
             sx={{ textTransform: "none", borderRadius: 2 }}
           >
             Cancel
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             onClick={confirmDeleteScholarship}
             color="error"
             variant="contained"
@@ -611,7 +611,7 @@ export default function AdminScholarshipsPage() {
             sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 2.5 }}
           >
             {deleteSubmitting ? <CircularProgress size={22} color="inherit" /> : "Delete"}
-          </Button>
+          </AppButton>
         </DialogActions>
       </Dialog>
 
@@ -891,12 +891,12 @@ export default function AdminScholarshipsPage() {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 1, gap: 1 }}>
-            <Button onClick={closeModal} sx={{ textTransform: "none", borderRadius: 2 }}>
+            <AppButton onClick={closeModal} sx={{ textTransform: "none", borderRadius: 2 }}>
               Cancel
-            </Button>
-            <Button type="submit" variant="contained" sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 3 }}>
+            </AppButton>
+            <AppButton type="submit" variant="contained" sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 3 }}>
               {editingId ? "Update Scholarship" : "Create Scholarship"}
-            </Button>
+            </AppButton>
           </DialogActions>
         </Box>
       </Dialog>

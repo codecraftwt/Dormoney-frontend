@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -9,7 +10,6 @@ import { toast } from "react-toastify";
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   CircularProgress,
   Divider,
@@ -24,6 +24,7 @@ import {
 import api from "../lib/api";
 import { CATEGORIES } from "../constants";
 import useAuth from "../hooks/useAuth";
+import AppButton from "../components/AppButton";
 
 const COLORS = {
   primary: "#3B82F6",
@@ -57,16 +58,33 @@ const formatDeadline = (deadline) => {
   });
 };
 
+const getPrefetchedMatches = () => {
+  try {
+    const raw = sessionStorage.getItem("dormoney_prefetched_matches");
+    if (!raw) return [];
+    sessionStorage.removeItem("dormoney_prefetched_matches");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+};
+
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [prefetchedMatches] = useState(() => getPrefetchedMatches());
   const [filters, setFilters] = useState(initialFilters);
-  const [scholarships, setScholarships] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [scholarships, setScholarships] = useState(prefetchedMatches);
+  const [loading, setLoading] = useState(prefetchedMatches.length === 0);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState("");
 
-  const fetchScholarships = async (nextFilters = filters) => {
-    setLoading(true);
+  const fetchScholarships = async (nextFilters = filters, options = {}) => {
+    const { preserveExisting = false } = options;
+    if (!preserveExisting) {
+      setLoading(true);
+    }
     setError("");
     try {
       const params = { activeOnly: true };
@@ -82,20 +100,39 @@ export default function DashboardPage() {
       if (nextFilters.deadlineEnd) {
         params.deadlineEnd = nextFilters.deadlineEnd;
       }
-      const res = await api.get("/api/scholarships", { params });
+      const hasProfileForMatch =
+        user?.onboarding_complete &&
+        !nextFilters.categories.length &&
+        !nextFilters.amountRanges.length &&
+        !nextFilters.deadlineStart &&
+        !nextFilters.deadlineEnd;
+      const res = hasProfileForMatch
+        ? await api.get("/api/scholarships/match")
+        : await api.get("/api/scholarships", { params });
       setScholarships(res.data.scholarships);
     } catch (err) {
       const message = err.response?.data?.message || "Could not load scholarships";
       setError(message);
       toast.error(message);
     } finally {
-      setLoading(false);
+      if (!preserveExisting) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    if (user && !user.onboarding_complete) {
+      navigate("/onboarding", { replace: true });
+      return;
+    }
+    const hasPrefetched = prefetchedMatches.length > 0;
+    if (hasPrefetched) {
+      fetchScholarships(initialFilters, { preserveExisting: true });
+      return;
+    }
     fetchScholarships(initialFilters);
-  }, []);
+  }, [navigate, user]);
 
   const toggleArrayValue = (key, value) => {
     setFilters((prev) => {
@@ -336,7 +373,7 @@ export default function DashboardPage() {
             </Stack>
 
             <Stack direction="row" spacing={1.5}>
-              <Button
+              <AppButton
                 fullWidth
                 onClick={() => fetchScholarships()}
                 sx={{
@@ -354,8 +391,8 @@ export default function DashboardPage() {
                 }}
               >
                 Apply
-              </Button>
-              <Button
+              </AppButton>
+              <AppButton
                 fullWidth
                 variant="outlined"
                 onClick={onResetFilters}
@@ -377,7 +414,7 @@ export default function DashboardPage() {
                 }}
               >
                 Reset
-              </Button>
+              </AppButton>
             </Stack>
           </Paper>
         </Box>
@@ -408,7 +445,7 @@ export default function DashboardPage() {
               </Typography>
             </Box>
             <Tooltip title="Logout">
-              <Button
+              <AppButton
                 variant="outlined"
                 onClick={logout}
                 aria-label="Logout"
@@ -424,7 +461,7 @@ export default function DashboardPage() {
                 }}
               >
                 <LogoutIcon fontSize="small" />
-              </Button>
+              </AppButton>
             </Tooltip>
           </Stack>
 
@@ -474,7 +511,7 @@ export default function DashboardPage() {
                 },
               }}
             />
-            <Button
+            <AppButton
               type="submit"
               disabled={loading || !searchText.trim()}
               sx={{
@@ -493,12 +530,17 @@ export default function DashboardPage() {
               }}
             >
               Ask
-            </Button>
+            </AppButton>
           </Paper>
 
           {error ? (
             <Alert severity="error" sx={{ mb: 2, borderRadius: "10px", fontFamily: font }}>
               {error}
+            </Alert>
+          ) : null}
+          {user && !user.email_verified ? (
+            <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", fontFamily: font }}>
+              Please verify your email address. We sent a verification link when your account was created.
             </Alert>
           ) : null}
 
@@ -537,7 +579,7 @@ export default function DashboardPage() {
                 <Typography sx={{ fontFamily: font, fontSize: "0.875rem", color: COLORS.muted }}>
                   We could not find scholarships matching your current search or filters.
                 </Typography>
-                <Button
+                <AppButton
                   variant="outlined"
                   startIcon={<RestartAltIcon />}
                   onClick={onResetFilters}
@@ -551,7 +593,7 @@ export default function DashboardPage() {
                   }}
                 >
                   Clear filters
-                </Button>
+                </AppButton>
               </Stack>
             </Paper>
           ) : null}
@@ -639,7 +681,7 @@ export default function DashboardPage() {
                       </Typography>
                     </Box>
                     {item.link ? (
-                      <Button
+                      <AppButton
                         component="a"
                         href={item.link}
                         target="_blank"
@@ -662,7 +704,7 @@ export default function DashboardPage() {
                         }}
                       >
                         Apply Now
-                      </Button>
+                      </AppButton>
                     ) : null}
                   </Box>
                 </Paper>

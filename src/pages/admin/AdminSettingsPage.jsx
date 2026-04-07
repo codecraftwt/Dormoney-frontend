@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
 import api from "../../lib/api";
 import {
   adminAlertSx,
@@ -8,6 +8,7 @@ import {
   adminOutlinedInputSx,
 } from "../../admin/adminStyles";
 import AdminSectionHeader from "../../components/AdminSectionHeader";
+import AppButton from "../../components/AppButton";
 
 const empty = { siteName: "", supportEmail: "", supportPhone: "" };
 
@@ -127,9 +128,9 @@ export default function AdminSettingsPage() {
               size="small"
               sx={adminOutlinedInputSx}
             />
-            <Button type="submit" variant="contained" disabled={saving} sx={{ ...adminContainedPrimarySx, alignSelf: "flex-start", mt: 0.5 }}>
+            <AppButton type="submit" variant="contained" disabled={saving} sx={{ ...adminContainedPrimarySx, alignSelf: "flex-start", mt: 0.5 }}>
               {saving ? "Saving…" : "Save settings"}
-            </Button>
+            </AppButton>
           </Stack>
         )}
       </Paper>

@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   CardActions,
   CardContent,
@@ -7,6 +6,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import AppButton from "./AppButton";
 
 export default function ScholarshipCard({ scholarship }) {
   return (
@@ -30,7 +30,7 @@ export default function ScholarshipCard({ scholarship }) {
         </Typography>
       </CardContent>
       <CardActions>
-        <Button
+        <AppButton
           variant="contained"
           size="small"
           component="a"
@@ -39,7 +39,7 @@ export default function ScholarshipCard({ scholarship }) {
           rel="noreferrer"
         >
           Apply Now
-        </Button>
+        </AppButton>
       </CardActions>
     </Card>
   );

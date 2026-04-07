@@ -3,7 +3,6 @@ import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   Dialog,
@@ -39,6 +38,7 @@ import {
   thSx,
 } from "../../admin/adminStyles";
 import AdminSectionHeader from "../../components/AdminSectionHeader";
+import AppButton from "../../components/AppButton";
 
 function formatDateCreated(iso) {
   if (!iso) return "—";
@@ -186,7 +186,7 @@ export default function AdminManagementPage() {
           sx={{ mb: 2 }}
         >
           <Typography sx={{ ...adminSectionLabelSx, mb: 0 }}>Administrator accounts</Typography>
-          <Button
+          <AppButton
             variant="contained"
             startIcon={<PersonAddAlt1RoundedIcon />}
             onClick={() => {
@@ -197,7 +197,7 @@ export default function AdminManagementPage() {
             sx={{ ...adminContainedPrimarySx, alignSelf: { xs: "stretch", sm: "center" } }}
           >
             Add user
-          </Button>
+          </AppButton>
         </Stack>
 
         {loading ? (
@@ -348,17 +348,17 @@ export default function AdminManagementPage() {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 1, gap: 1 }}>
-            <Button onClick={closeAddModal} sx={{ textTransform: "none", borderRadius: 2 }}>
+            <AppButton onClick={closeAddModal} sx={{ textTransform: "none", borderRadius: 2 }}>
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               type="submit"
               variant="contained"
               disabled={submitting}
               sx={{ textTransform: "none", borderRadius: 2, fontWeight: 600, px: 3 }}
             >
               {submitting ? <CircularProgress size={22} color="inherit" /> : "Create account"}
-            </Button>
+            </AppButton>
           </DialogActions>
         </Box>
       </Dialog>

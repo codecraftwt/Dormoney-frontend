@@ -1,6 +1,7 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { adminToolbarButtonSx } from "../admin/adminStyles";
 import useAuth from "../hooks/useAuth";
+import AppButton from "./AppButton";
 
 export default function AdminSectionHeader({ title, subtitle }) {
   const { logout } = useAuth();
@@ -23,7 +24,7 @@ export default function AdminSectionHeader({ title, subtitle }) {
           </Typography>
         ) : null}
       </Box>
-      <Button
+      <AppButton
         variant="contained"
         onClick={logout}
         sx={{
@@ -33,7 +34,7 @@ export default function AdminSectionHeader({ title, subtitle }) {
         }}
       >
         Logout
-      </Button>
+      </AppButton>
     </Stack>
   );
 }

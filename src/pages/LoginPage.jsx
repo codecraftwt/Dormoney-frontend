@@ -5,7 +5,6 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   FormControlLabel,
   Paper,
@@ -20,10 +19,11 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import api from "../lib/api";
 import useAuth from "../hooks/useAuth";
+import AppButton from "../components/AppButton";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
+  const { login, isAuthenticated, isAdmin, loading: authLoading, user } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,8 +35,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
-    navigate(isAdmin ? "/admin/dashboard" : "/dashboard", { replace: true });
-  }, [authLoading, isAuthenticated, isAdmin, navigate]);
+    if (isAdmin) {
+      navigate("/admin/dashboard", { replace: true });
+      return;
+    }
+    navigate(user?.onboarding_complete ? "/dashboard" : "/onboarding", { replace: true });
+  }, [authLoading, isAuthenticated, isAdmin, navigate, user?.onboarding_complete]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -46,7 +50,7 @@ export default function LoginPage() {
     try {
       const res = await api.post("/api/auth/login", form);
       login(res.data);
-      navigate("/dashboard");
+      navigate(res.data.user?.onboarding_complete ? "/dashboard" : "/onboarding");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
@@ -204,7 +208,7 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <Button
+            <AppButton
               type="submit"
               variant="contained"
               size="large"
@@ -226,7 +230,7 @@ export default function LoginPage() {
               }}
             >
               {submitting ? "Signing in..." : "Sign in"}
-            </Button>
+            </AppButton>
 
             <Typography
               variant="body2"

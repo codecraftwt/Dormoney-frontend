@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   FormControl,
@@ -34,6 +33,7 @@ import {
   thSx,
 } from "../../admin/adminStyles";
 import AdminSectionHeader from "../../components/AdminSectionHeader";
+import AppButton from "../../components/AppButton";
 
 function formatDateCreated(iso) {
   if (!iso) return "—";
@@ -136,9 +136,9 @@ export default function AdminUsersPage() {
                   ),
                 }}
               />
-              <Button type="submit" variant="contained" sx={{ ...adminContainedPrimarySx, flexShrink: 0 }}>
+              <AppButton type="submit" variant="contained" sx={{ ...adminContainedPrimarySx, flexShrink: 0 }}>
                 Search
-              </Button>
+              </AppButton>
             </Stack>
           </Box>
         </Stack>
