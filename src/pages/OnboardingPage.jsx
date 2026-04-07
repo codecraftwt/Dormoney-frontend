@@ -19,6 +19,7 @@ import useAuth from "../hooks/useAuth";
 import { GPA_RANGE_OPTIONS, GRADE_LEVEL_OPTIONS, US_STATES } from "../constants/onboarding";
 import { getToken } from "../lib/storage";
 import AppButton from "../components/AppButton";
+import { colors } from "../theme";
 
 const FIELDS_OF_STUDY = [
   "Engineering","Business","Healthcare","Education","Arts & Design","Law","Social Sciences",
@@ -114,13 +115,13 @@ export default function OnboardingPage() {
     px: 0.5,
     py: 0.35,
     "&.MuiChip-filledPrimary": {
-      bgcolor: "#2563eb",
+      bgcolor: colors.primary,
     },
   };
   const inputSx = {
     "& .MuiOutlinedInput-root": {
       borderRadius: 2,
-      bgcolor: "#fff",
+      bgcolor: colors.paper,
     },
   };
 
@@ -161,10 +162,10 @@ export default function OnboardingPage() {
 
   if (done) {
     return (
-      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", p: { xs: 1, sm: 3 }, bgcolor: "#f8fafc" }}>
-        <Paper sx={{ maxWidth: 640, p: { xs: 2, sm: 4 }, borderRadius: 3, width: "100%", border: "1px solid #e2e8f0" }}>
+      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", p: { xs: 1, sm: 3 }, bgcolor: colors.pageBg }}>
+        <Paper sx={{ maxWidth: 640, p: { xs: 2, sm: 4 }, borderRadius: 3, width: "100%", border: `1px solid ${colors.border}` }}>
           <Stack spacing={2.25}>
-            <Typography variant="h4" fontWeight={800} color="#0f172a">Your profile is ready!</Typography>
+            <Typography variant="h4" fontWeight={800} color={colors.heading}>Your profile is ready!</Typography>
             <Typography color="text.secondary">
               {form.first_name ? `Nice work, ${form.first_name}. ` : ""}We saved your profile and your scholarship matches are ready.
             </Typography>
@@ -186,7 +187,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", p: { xs: 1, sm: 3 }, bgcolor: "#f8fafc" }}>
+    <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", p: { xs: 1, sm: 3 }, bgcolor: colors.pageBg }}>
       <Paper
         elevation={0}
         sx={{
@@ -194,13 +195,13 @@ export default function OnboardingPage() {
           p: { xs: 1.5, sm: 3.5 },
           borderRadius: 3,
           width: "100%",
-          border: "1px solid #e2e8f0",
+          border: `1px solid ${colors.border}`,
           boxShadow: "0 12px 28px rgba(15, 23, 42, 0.06)",
         }}
       >
         <Stack spacing={3}>
           <Box>
-            <Typography fontWeight={700} color="#334155">{stepTitle(step)}</Typography>
+            <Typography fontWeight={700} color={colors.bodyMuted}>{stepTitle(step)}</Typography>
             <LinearProgress
               variant="determinate"
               value={progress}
@@ -208,8 +209,8 @@ export default function OnboardingPage() {
                 mt: 1,
                 height: 10,
                 borderRadius: 999,
-                bgcolor: "#e2e8f0",
-                "& .MuiLinearProgress-bar": { borderRadius: 999, bgcolor: "#2563eb" },
+                bgcolor: colors.border,
+                "& .MuiLinearProgress-bar": { borderRadius: 999, bgcolor: colors.primary },
               }}
             />
           </Box>
@@ -273,7 +274,7 @@ export default function OnboardingPage() {
           {step === 2 ? (
             <Stack spacing={2.25}>
               <Box>
-                <Typography variant="h5" fontWeight={800} color="#0f172a">{STEP_HEADING[2]}</Typography>
+                <Typography variant="h5" fontWeight={800} color={colors.heading}>{STEP_HEADING[2]}</Typography>
                 <Typography variant="body2" color="text.secondary" mt={0.5}>{STEP_SUBTEXT[2]}</Typography>
               </Box>
               {showQuestion(0) ? (
@@ -364,7 +365,7 @@ export default function OnboardingPage() {
           {step === 3 ? (
             <Stack spacing={2.25}>
               <Box>
-                <Typography variant="h5" fontWeight={800} color="#0f172a">{STEP_HEADING[3]}</Typography>
+                <Typography variant="h5" fontWeight={800} color={colors.heading}>{STEP_HEADING[3]}</Typography>
                 <Typography variant="body2" color="text.secondary" mt={0.5}>{STEP_SUBTEXT[3]}</Typography>
               </Box>
               {showQuestion(0) ? (
@@ -436,7 +437,7 @@ export default function OnboardingPage() {
           {step === 4 ? (
             <Stack spacing={2.25}>
               <Box>
-                <Typography variant="h5" fontWeight={800} color="#0f172a">{STEP_HEADING[4]}</Typography>
+                <Typography variant="h5" fontWeight={800} color={colors.heading}>{STEP_HEADING[4]}</Typography>
                 <Typography variant="body2" color="text.secondary" mt={0.5}>{STEP_SUBTEXT[4]}</Typography>
               </Box>
               {showQuestion(0) ? (
